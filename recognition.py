@@ -100,12 +100,9 @@ while(True):
                     recognition_image = file_dir
                     print("[RECOG]", recognition_user, max_ret, file_dir)
 
-
-# 画像表示
     cv2.imshow('img', img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# 何かキーを押したら終了
 cv2.waitKey(0)
 cv2.destroyAllWindows()
