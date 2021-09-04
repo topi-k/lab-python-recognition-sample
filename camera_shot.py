@@ -74,8 +74,9 @@ while(True):
 
     cv2.imshow('img', img)
     time.sleep(1)
-    print(left_ear_img_cnt, "/10 : ", right_ear_img_cnt, "/10")
-    if left_ear_img_cnt > 10 & right_ear_img_cnt > 10:
+    print(left_ear_img_cnt, "/10:", right_ear_img_cnt, "/10")
+
+    if left_ear_img_cnt > 10 and right_ear_img_cnt > 10:
         break
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
