@@ -6,6 +6,7 @@ import cv2
 import sys
 import time
 import os
+import numpy as np
 
 threshold = 0.7  # 閾値(0.6~0.8)
 # Haar-like特徴分類器の読み込み
@@ -46,8 +47,7 @@ def main():
 
         # 右耳の検知処理
         for (ercx, ercy, ercw, erch) in ear_right:
-            cv2.rectangle(img, (ercx, ercy),
-                          (ercx+ercw, ercy+erch), (0, 0, 255), 2)
+            #cv2.rectangle(img, (ercx, ercy),(ercx+ercw, ercy+erch), (0, 0, 255), 2)
 
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/right/'
@@ -57,8 +57,7 @@ def main():
 
         # 左耳の検知処理
         for (elcx, elcy, elcw, elch) in ear_left:
-            cv2.rectangle(img, (elcx, elcy),
-                          (elcx+elcw, elcy+elch), (0, 0, 255), 2)
+            #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
 
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/left/'
@@ -79,28 +78,53 @@ def recognition(img, IMG_DIR, IMG_SIZE):
     users_dir = os.listdir(IMG_DIR)
     max_distance = 0
 
+    # AKAZE検出器の生成
+    akaze = cv2.AKAZE_create()
+
     for user_dir in users_dir:
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
 
         for file_dir in files_dir:
             target_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
             target_img = cv2.imread(target_img_path)
-            target_img = cv2.resize(target_img, IMG_SIZE)
-            target_hist = cv2.calcHist(
-                [target_img], [0], None, [256], [0, 256])
 
-            comparing_img = cv2.resize(img, IMG_SIZE)
-            comparing_hist = cv2.calcHist(
-                [comparing_img], [0], None, [256], [0, 256])
+            # print(target_img_path)
 
-            distance = cv2.compareHist(target_hist, comparing_hist, 0)
+            #comparing_img = cv2.resize(img, IMG_SIZE)
+            comparing_img = img
+            # print(comparing_img.shape)
+            # print(type(comparing_img.shape))
 
-            # print(user_dir, file_dir, ret)
-            if (max_distance < distance and distance > threshold):
-                max_distance = distance
-                recognition_user = user_dir
-                print("[RECOG]", recognition_user, max_distance, file_dir)
-            return recognition_user, max_distance
+            #target_img = cv2.resize(target_img, IMG_SIZE)
+            # print(target_img.shape)
+            # print(type(target_img.shape))
+
+            gray_img_ref = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
+            gray_img_comp = cv2.cvtColor(comparing_img, cv2.COLOR_BGR2GRAY)
+
+            kp1, des1 = akaze.detectAndCompute(gray_img_ref, None)
+            kp2, des2 = akaze.detectAndCompute(gray_img_comp, None)
+
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+            matches = bf.knnMatch(des1, des2, k=2)
+
+            # データを間引きする
+            ratio = 0.75
+            good = []
+            for m, n in matches:
+                if m.distance < ratio * n.distance:
+                    good.append(m)
+
+            if len(good) > 0:
+                print("Detect user ", user_dir, ". mdist:",
+                      m.distance, " ndist:", ratio * n.distance, " good:", len(good))
+                # 対応する特徴点同士を描画
+                img_result = cv2.drawMatches(
+                    target_img, kp1, comparing_img, kp2, good, None, flags=2)
+                # 画像表示
+                cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
+                cv2.imshow('Result', img_result)
+
     return "none", 0
 
 

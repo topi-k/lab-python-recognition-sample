@@ -15,9 +15,11 @@ ear_right_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_rightear.xml')
 ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
+margin = 10
 
 # カメラから顔をキャプチャ
 cap = cv2.VideoCapture(0)
+
 
 if not cap.isOpened():
     print("Fail to open videocapture")
@@ -46,19 +48,19 @@ while(True):
     time_unique = int(time.time())
 
     for (ercx, ercy, ercw, erch) in ear_right:
-        cv2.rectangle(img, (ercx, ercy),
-                      (ercx+ercw, ercy+erch), (0, 0, 255), 2)
+        #cv2.rectangle(img, (ercx, ercy),(ercx+ercw, ercy+erch), (0, 0, 255), 2)
 
-        save_img_1 = img[ercy:ercy+erch, ercx:ercx+ercw]
+        save_img_1 = img[ercy-margin:ercy+erch +
+                         margin, ercx-margin:ercx+ercw+margin]
         cv2.imwrite(
             "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique), save_img_1)
         print(
             "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique))
 
     for (elcx, elcy, elcw, elch) in ear_left:
-        cv2.rectangle(img, (elcx, elcy),
-                      (elcx+elcw, elcy+elch), (0, 0, 255), 2)
-        save_img_2 = img[elcy:elcy+elch, elcx:elcx+elcw]
+        #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
+        save_img_2 = img[elcy-margin:elcy+elch +
+                         margin, elcx-margin:elcx+elcw+margin]
         cv2.imwrite(
             "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique), save_img_2)
         print(
