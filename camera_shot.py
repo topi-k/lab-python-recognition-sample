@@ -17,9 +17,11 @@ ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
 margin = 10
 
+right_ear_img_cnt = 0
+left_ear_img_cnt = 0
+
 # カメラから顔をキャプチャ
 cap = cv2.VideoCapture(0)
-
 
 if not cap.isOpened():
     print("Fail to open videocapture")
@@ -57,6 +59,8 @@ while(True):
         print(
             "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique))
 
+        right_ear_img_cnt = right_ear_img_cnt + 1
+
     for (elcx, elcy, elcw, elch) in ear_left:
         #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
         save_img_2 = img[elcy-margin:elcy+elch +
@@ -66,8 +70,14 @@ while(True):
         print(
             "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique))
 
+        left_ear_img_cnt = left_ear_img_cnt + 1
+
     cv2.imshow('img', img)
     time.sleep(1)
+    print(left_ear_img_cnt, "/10 : ", right_ear_img_cnt, "/10")
+    if left_ear_img_cnt > 10 & right_ear_img_cnt > 10:
+        break
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

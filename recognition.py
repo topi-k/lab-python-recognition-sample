@@ -8,7 +8,6 @@ import time
 import os
 import numpy as np
 
-threshold = 0.7  # 閾値(0.6~0.8)
 # Haar-like特徴分類器の読み込み
 ear_right_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_rightear.xml')
@@ -16,6 +15,10 @@ ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
 face_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_frontalface_default.xml')
+
+# A-KAZE/KNN Setting
+ratio = 0.7  # A-KAZE/KNN Ratio(~1)
+good_ratio = 1  # Good Ratio(0~2)
 
 
 def main():
@@ -26,9 +29,6 @@ def main():
     if not cap.isOpened():
         print("Fail to open videocapture")
         sys.exit()
-
-    max_ret = 0
-    recognition_user = 0
 
     while(True):
         ret, img = cap.read()
@@ -47,23 +47,15 @@ def main():
 
         # 右耳の検知処理
         for (ercx, ercy, ercw, erch) in ear_right:
-            #cv2.rectangle(img, (ercx, ercy),(ercx+ercw, ercy+erch), (0, 0, 255), 2)
-
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/right/'
-            IMG_SIZE = (200, 200)
-
-            recog_user, distance = recognition(img, IMG_DIR, IMG_SIZE)
+            recog_user, distance = recognition(img, IMG_DIR)
 
         # 左耳の検知処理
         for (elcx, elcy, elcw, elch) in ear_left:
-            #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
-
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/left/'
-            IMG_SIZE = (200, 200)
-
-            recog_user, distance = recognition(img, IMG_DIR, IMG_SIZE)
+            recog_user, distance = recognition(img, IMG_DIR)
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -73,10 +65,9 @@ def main():
     cv2.destroyAllWindows()
 
 
-def recognition(img, IMG_DIR, IMG_SIZE):
+def recognition(img, IMG_DIR):
     file_dir = ""
     users_dir = os.listdir(IMG_DIR)
-    max_distance = 0
 
     # AKAZE検出器の生成
     akaze = cv2.AKAZE_create()
@@ -88,16 +79,7 @@ def recognition(img, IMG_DIR, IMG_SIZE):
             target_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
             target_img = cv2.imread(target_img_path)
 
-            # print(target_img_path)
-
-            #comparing_img = cv2.resize(img, IMG_SIZE)
             comparing_img = img
-            # print(comparing_img.shape)
-            # print(type(comparing_img.shape))
-
-            #target_img = cv2.resize(target_img, IMG_SIZE)
-            # print(target_img.shape)
-            # print(type(target_img.shape))
 
             gray_img_ref = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
             gray_img_comp = cv2.cvtColor(comparing_img, cv2.COLOR_BGR2GRAY)
@@ -109,14 +91,13 @@ def recognition(img, IMG_DIR, IMG_SIZE):
             matches = bf.knnMatch(des1, des2, k=2)
 
             # データを間引きする
-            ratio = 0.75
             good = []
             for m, n in matches:
                 if m.distance < ratio * n.distance:
                     good.append(m)
 
-            if len(good) > 0:
-                print("Detect user ", user_dir, ". mdist:",
+            if len(good) > good_ratio:
+                print("Detect user", user_dir, ". mdist:",
                       m.distance, " ndist:", ratio * n.distance, " good:", len(good))
                 # 対応する特徴点同士を描画
                 img_result = cv2.drawMatches(
