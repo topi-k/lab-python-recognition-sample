@@ -8,6 +8,11 @@ import time
 import os
 import numpy as np
 
+device = cv2.ocl.Device_getDefault()
+print(f"Vendor ID: {device.vendorID()}")
+print(f"Vendor name: {device.vendorName()}")
+print(f"Name: {device.name()}")
+
 # Haar-like特徴分類器の読み込み
 ear_right_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_rightear.xml')
@@ -20,6 +25,8 @@ face_cascade = cv2.CascadeClassifier(
 ratio = 0.7  # A-KAZE/KNN Ratio(~1)
 good_ratio = 1  # Good Ratio(0~2)
 
+expand_template = 2 # 拡大率
+white_space = 20 # 余白追加量
 
 def main():
 
@@ -76,17 +83,39 @@ def recognition(img, IMG_DIR):
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
 
         for file_dir in files_dir:
-            target_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
-            target_img = cv2.imread(target_img_path)
+            lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
+            lib_img = cv2.imread(lib_img_path)
 
-            comparing_img = img
+            camera_img = img
 
-            gray_img_ref = cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY)
-            gray_img_comp = cv2.cvtColor(comparing_img, cv2.COLOR_BGR2GRAY)
+            # 比較画像を読み込み、各種処理を実行する
+            #  (glay_img_ref = 照合先画像 | camera_img = カメラ映像)
+            img_gpu_temp = cv2.cuda_GpuMat() # Allocate device memory only once, as memory allocation seems to take time...
 
+            # ライブラリ側の処理
+            gray_img_ref = cv2.cvtColor(lib_img, cv2.COLOR_BGR2GRAY)
+            height, width = gray_img_ref.shape[:2]
+            gray_img_ref = np.ones((height + white_space*2, width + white_space*2),np.uint8)*255
+            gray_img_ref = cv2.resize(gray_img_ref, None, fx = expand_template, fy = expand_template)        
+
+            gray_img_ref = cv2.UMat(gray_img_ref)   
+
+            # カメラ画像の処理
+            img_gpu_temp.upload(camera_img)
+            
+            img_gpu_temp = cv2.cuda.cvtColor(img_gpu_temp, cv2.COLOR_BGR2GRAY)
+            height, width = img_gpu_temp.cuda.shape[:2]
+            img_gpu_temp = np.ones((height + white_space*2, width + white_space*2),np.uint8)*255
+            img_gpu_temp = cv2.cuda.resize(img_gpu_temp, None, fx = expand_template, fy = expand_template)
+            
+            camera_img = img_gpu_temp.download()
+
+            camera_img = cv2.UMat(camera_img)
+
+            # 特徴量を計算する
             kp1, des1 = akaze.detectAndCompute(gray_img_ref, None)
-            kp2, des2 = akaze.detectAndCompute(gray_img_comp, None)
-
+            kp2, des2 = akaze.detectAndCompute(camera_img, None)
+            
             bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
             matches = bf.knnMatch(des1, des2, k=2)
 
@@ -98,10 +127,10 @@ def recognition(img, IMG_DIR):
 
             if len(good) > good_ratio:
                 print("Detect user", user_dir, ". mdist:",
-                      m.distance, " ndist:", ratio * n.distance, " good:", len(good))
+                    m.distance, " ndist:", ratio * n.distance, " good:", len(good))
                 # 対応する特徴点同士を描画
                 img_result = cv2.drawMatches(
-                    target_img, kp1, comparing_img, kp2, good, None, flags=2)
+                    lib_img, kp1, camera_img, kp2, good, None, flags=2)
                 # 画像表示
                 cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
                 cv2.imshow('Result', img_result)
