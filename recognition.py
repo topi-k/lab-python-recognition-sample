@@ -22,11 +22,11 @@ face_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_frontalface_default.xml')
 
 # A-KAZE/KNN Setting
-ratio = 0.7  # A-KAZE/KNN Ratio(~1)
+ratio = 0.8  # A-KAZE/KNN Ratio(~1)
 good_ratio = 1  # Good Ratio(0~2)
 
 expand_template = 2 # 拡大率
-white_space = 20 # 余白追加量
+margin = 30
 
 def main():
 
@@ -56,13 +56,15 @@ def main():
         for (ercx, ercy, ercw, erch) in ear_right:
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/right/'
-            recog_user, distance = recognition(img, IMG_DIR)
+            right_ear_img = img[ercy-margin:ercy+erch+margin, ercx-margin:ercx+ercw+margin]
+            recog_user, distance = recognition(right_ear_img, IMG_DIR)
 
         # 左耳の検知処理
         for (elcx, elcy, elcw, elch) in ear_left:
             IMG_DIR = os.path.abspath(
                 os.path.dirname(__file__)) + '/images/left/'
-            recog_user, distance = recognition(img, IMG_DIR)
+            left_ear_img = img[elcy-margin:elcy+elch+margin, elcx-margin:elcx+elcw+margin]
+            recog_user, distance = recognition(left_ear_img, IMG_DIR)
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -80,40 +82,39 @@ def recognition(img, IMG_DIR):
     akaze = cv2.AKAZE_create()
 
     for user_dir in users_dir:
+        time_start = time.time()
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
 
         for file_dir in files_dir:
             lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
-            lib_img = cv2.imread(lib_img_path)
 
+            lib_img = cv2.imread(lib_img_path)
             camera_img = img
 
             # 比較画像を読み込み、各種処理を実行する
             #  (glay_img_ref = 照合先画像 | camera_img = カメラ映像)
-            img_gpu_temp = cv2.cuda_GpuMat() # Allocate device memory only once, as memory allocation seems to take time...
+            gpu = cv2.cuda_GpuMat() # Allocate device memory only once, as memory allocation seems to take time...
 
             # ライブラリ側の処理
-            gray_img_ref = cv2.cvtColor(lib_img, cv2.COLOR_BGR2GRAY)
-            height, width = gray_img_ref.shape[:2]
-            gray_img_ref = np.ones((height + white_space*2, width + white_space*2),np.uint8)*255
-            gray_img_ref = cv2.resize(gray_img_ref, None, fx = expand_template, fy = expand_template)        
+            gpu.upload(lib_img) # Upload to GPU memory
+            lib_img = cv2.cvtColor(lib_img, cv2.COLOR_BGR2GRAY)
+            height, width = lib_img.shape[:2]
+            lib_img = cv2.resize(lib_img, None, fx = expand_template, fy = expand_template)        
+            lib_img = gpu.download()
 
-            gray_img_ref = cv2.UMat(gray_img_ref)   
+            lib_img = cv2.UMat(lib_img)   
 
             # カメラ画像の処理
-            img_gpu_temp.upload(camera_img)
-            
-            img_gpu_temp = cv2.cuda.cvtColor(img_gpu_temp, cv2.COLOR_BGR2GRAY)
-            height, width = img_gpu_temp.cuda.shape[:2]
-            img_gpu_temp = np.ones((height + white_space*2, width + white_space*2),np.uint8)*255
-            img_gpu_temp = cv2.cuda.resize(img_gpu_temp, None, fx = expand_template, fy = expand_template)
-            
-            camera_img = img_gpu_temp.download()
+            gpu.upload(camera_img) # Upload to GPU memory
+            gpu = cv2.cuda.cvtColor(gpu, cv2.COLOR_BGR2GRAY)
+            height, width = camera_img.shape[:2]
+            gpu = cv2.cuda.resize(gpu, (height * expand_template, width * expand_template))
+            camera_img = gpu.download()
 
             camera_img = cv2.UMat(camera_img)
 
             # 特徴量を計算する
-            kp1, des1 = akaze.detectAndCompute(gray_img_ref, None)
+            kp1, des1 = akaze.detectAndCompute(lib_img, None)
             kp2, des2 = akaze.detectAndCompute(camera_img, None)
             
             bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
@@ -134,6 +135,8 @@ def recognition(img, IMG_DIR):
                 # 画像表示
                 cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
                 cv2.imshow('Result', img_result)
+        time_end = time.time()
+        print ("GPU = {0}".format((time_end - time_start) * 1000 / 10000) + "[msec]")
 
     return "none", 0
 
