@@ -61,6 +61,9 @@ while(True):
 
         right_ear_img_cnt = right_ear_img_cnt + 1
 
+        cv2.namedWindow("save_img", cv2.WINDOW_AUTOSIZE)
+        cv2.imshow('save_img', save_img_1)
+
     for (elcx, elcy, elcw, elch) in ear_left:
         #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
         save_img_2 = img[elcy-margin:elcy+elch +
@@ -71,6 +74,10 @@ while(True):
             "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique))
 
         left_ear_img_cnt = left_ear_img_cnt + 1
+        
+        cv2.namedWindow("save_img", cv2.WINDOW_AUTOSIZE)
+        cv2.imshow('save_img', save_img_2)
+
 
     cv2.imshow('img', img)
     time.sleep(1)

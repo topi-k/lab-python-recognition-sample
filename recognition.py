@@ -22,22 +22,23 @@ face_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_frontalface_default.xml')
 
 # A-KAZE/KNN Setting
-ratio = 0.8  # A-KAZE/KNN Ratio(~1)
-good_ratio = 1  # Good Ratio(0~2)
-
-expand_template = 2 # 拡大率
-margin = 30
+IMG_SIZE = (200, 200)
+margin = 10
 
 def main():
 
     # カメラから顔をキャプチャ
     cap = cv2.VideoCapture(0)
 
+    recog_user = -1
+    distance = 0
+
     if not cap.isOpened():
         print("Fail to open videocapture")
         sys.exit()
 
     while(True):
+        time_start = time.time()
         ret, img = cap.read()
 
         # グレースケール変換
@@ -58,6 +59,7 @@ def main():
                 os.path.dirname(__file__)) + '/images/right/'
             right_ear_img = img[ercy-margin:ercy+erch+margin, ercx-margin:ercx+ercw+margin]
             recog_user, distance = recognition(right_ear_img, IMG_DIR)
+            time_end = time.time()
 
         # 左耳の検知処理
         for (elcx, elcy, elcw, elch) in ear_left:
@@ -65,11 +67,17 @@ def main():
                 os.path.dirname(__file__)) + '/images/left/'
             left_ear_img = img[elcy-margin:elcy+elch+margin, elcx-margin:elcx+elcw+margin]
             recog_user, distance = recognition(left_ear_img, IMG_DIR)
+            time_end = time.time()
+        
+        if recog_user != -1:
+            print ("{0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
+            print ("Recognition User:",recog_user," Ret",distance)
+            break
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
+    
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -77,69 +85,49 @@ def main():
 def recognition(img, IMG_DIR):
     file_dir = ""
     users_dir = os.listdir(IMG_DIR)
+    recognition_user_ret = 0
 
     # AKAZE検出器の生成
     akaze = cv2.AKAZE_create()
+    # BFMatcherオブジェクトの生成
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING)
+
+    # カメラの画像を処理して
+    camera_img = img
+    camera_img = cv2.resize(camera_img, IMG_SIZE)
+    (target_kp, target_des) = akaze.detectAndCompute(camera_img, None)
 
     for user_dir in users_dir:
-        time_start = time.time()
+        max_ret_user = 0
+        user_id = int(user_dir)
+
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
 
         for file_dir in files_dir:
-            lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir
+            lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir # ライブラリの検出対象画像へのパス
+            try:
+                # ライブラリに登録されている画像をロードして特徴量検出を行う
+                lib_img = cv2.imread(lib_img_path, cv2.IMREAD_GRAYSCALE)
+                lib_img = cv2.resize(lib_img, IMG_SIZE)
+                (comparing_kp, comparing_des) = akaze.detectAndCompute(lib_img, None)
+                # BFMatcher で ライブラリに登録されている全ての画像に対してマッチングを行う
+                matches = bf.match(target_des, comparing_des)
+                if len(matches) == 0:
+                    break
+                dist = [m.distance for m in matches]
+                ret = sum(dist) / len(dist)
+            except cv2.error:
+                ret = -1
+            if max_ret_user < ret:
+                max_ret_user = ret
 
-            lib_img = cv2.imread(lib_img_path)
-            camera_img = img
+        if max_ret_user > recognition_user_ret:
+            recognition_user_ret = max_ret_user
+            recognition_user = user_id
+            print(recognition_user,":",recognition_user_ret)
+            return recognition_user, recognition_user_ret
 
-            # 比較画像を読み込み、各種処理を実行する
-            #  (glay_img_ref = 照合先画像 | camera_img = カメラ映像)
-            gpu = cv2.cuda_GpuMat() # Allocate device memory only once, as memory allocation seems to take time...
-
-            # ライブラリ側の処理
-            gpu.upload(lib_img) # Upload to GPU memory
-            lib_img = cv2.cvtColor(lib_img, cv2.COLOR_BGR2GRAY)
-            height, width = lib_img.shape[:2]
-            lib_img = cv2.resize(lib_img, None, fx = expand_template, fy = expand_template)        
-            lib_img = gpu.download()
-
-            lib_img = cv2.UMat(lib_img)   
-
-            # カメラ画像の処理
-            gpu.upload(camera_img) # Upload to GPU memory
-            gpu = cv2.cuda.cvtColor(gpu, cv2.COLOR_BGR2GRAY)
-            height, width = camera_img.shape[:2]
-            gpu = cv2.cuda.resize(gpu, (height * expand_template, width * expand_template))
-            camera_img = gpu.download()
-
-            camera_img = cv2.UMat(camera_img)
-
-            # 特徴量を計算する
-            kp1, des1 = akaze.detectAndCompute(lib_img, None)
-            kp2, des2 = akaze.detectAndCompute(camera_img, None)
-            
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
-            matches = bf.knnMatch(des1, des2, k=2)
-
-            # データを間引きする
-            good = []
-            for m, n in matches:
-                if m.distance < ratio * n.distance:
-                    good.append(m)
-
-            if len(good) > good_ratio:
-                print("Detect user", user_dir, ". mdist:",
-                    m.distance, " ndist:", ratio * n.distance, " good:", len(good))
-                # 対応する特徴点同士を描画
-                img_result = cv2.drawMatches(
-                    lib_img, kp1, camera_img, kp2, good, None, flags=2)
-                # 画像表示
-                cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
-                cv2.imshow('Result', img_result)
-        time_end = time.time()
-        print ("GPU = {0}".format((time_end - time_start) * 1000 / 10000) + "[msec]")
-
-    return "none", 0
-
+    return -1, 0
 
 if __name__ == "__main__":
     main()
