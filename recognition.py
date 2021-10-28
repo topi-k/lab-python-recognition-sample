@@ -22,8 +22,9 @@ face_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_frontalface_default.xml')
 
 # A-KAZE/KNN Setting
-IMG_SIZE = (200, 200)
-margin = 10
+margin = 10 # 画像の周辺空間
+zoom_diam = 3 # （特徴量検出用の拡大倍率）
+threshold = 200 # 閾値
 
 def main():
 
@@ -59,6 +60,7 @@ def main():
                 os.path.dirname(__file__)) + '/images/right/'
             right_ear_img = img[ercy-margin:ercy+erch+margin, ercx-margin:ercx+ercw+margin]
             recog_user, distance = recognition(right_ear_img, IMG_DIR)
+            print(recog_user,distance)
             time_end = time.time()
 
         # 左耳の検知処理
@@ -67,12 +69,12 @@ def main():
                 os.path.dirname(__file__)) + '/images/left/'
             left_ear_img = img[elcy-margin:elcy+elch+margin, elcx-margin:elcx+elcw+margin]
             recog_user, distance = recognition(left_ear_img, IMG_DIR)
+            print(recog_user,distance)
             time_end = time.time()
         
         if recog_user != -1:
             print ("{0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
             print ("Recognition User:",recog_user," Ret",distance)
-            break
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -90,11 +92,20 @@ def recognition(img, IMG_DIR):
     # AKAZE検出器の生成
     akaze = cv2.AKAZE_create()
     # BFMatcherオブジェクトの生成
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+    # CLAHEオブジェクトの生成
+    clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
 
-    # カメラの画像を処理して
+    # カメラの画像を処理する
     camera_img = img
-    camera_img = cv2.resize(camera_img, IMG_SIZE)
+
+    # 画像を指定した倍率に拡大する
+    camera_img = cv2.resize(camera_img, dsize=None, fx=zoom_diam, fy=zoom_diam)
+    # グレースケール変換
+    camera_img = cv2.cvtColor(camera_img,cv2.COLOR_BGR2GRAY)
+    # コントラスト均等化
+    camera_img = clahe.apply(camera_img)
+
     (target_kp, target_des) = akaze.detectAndCompute(camera_img, None)
 
     for user_dir in users_dir:
@@ -105,29 +116,39 @@ def recognition(img, IMG_DIR):
 
         for file_dir in files_dir:
             lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir # ライブラリの検出対象画像へのパス
-            try:
-                # ライブラリに登録されている画像をロードして特徴量検出を行う
-                lib_img = cv2.imread(lib_img_path, cv2.IMREAD_GRAYSCALE)
-                lib_img = cv2.resize(lib_img, IMG_SIZE)
-                (comparing_kp, comparing_des) = akaze.detectAndCompute(lib_img, None)
-                # BFMatcher で ライブラリに登録されている全ての画像に対してマッチングを行う
-                matches = bf.match(target_des, comparing_des)
-                if len(matches) == 0:
-                    break
-                dist = [m.distance for m in matches]
-                ret = sum(dist) / len(dist)
-            except cv2.error:
-                ret = -1
+
+            # ライブラリに登録されている画像をロードして特徴量検出を行う
+            # ロードしたライブラリの画像を処理する
+            lib_img = cv2.imread(lib_img_path)
+            # 画像を指定した倍率に拡大する
+            lib_img = cv2.resize(lib_img, dsize=None, fx=zoom_diam, fy=zoom_diam)
+            # グレースケール変換
+            lib_img = cv2.cvtColor(lib_img, cv2.COLOR_BGR2GRAY)
+            # コントラスト均等化
+            lib_img = clahe.apply(lib_img)
+
+            (comparing_kp, comparing_des) = akaze.detectAndCompute(lib_img, None)
+
+            # BFMatcher で ライブラリに登録されている全ての画像に対してマッチングを行う
+            matches = bf.match(target_des, comparing_des)
+            if len(matches) == 0:
+                break
+            dist = [m.distance for m in matches]
+            ret = sum(dist) / len(dist)
+
             if max_ret_user < ret:
                 max_ret_user = ret
 
-        if max_ret_user > recognition_user_ret:
-            recognition_user_ret = max_ret_user
-            recognition_user = user_id
-            print(recognition_user,":",recognition_user_ret)
-            return recognition_user, recognition_user_ret
 
-    return -1, 0
+            if max_ret_user > recognition_user_ret:
+                recognition_user_ret = max_ret_user
+                recognition_user = user_id
+                
+    if threshold < max_ret_user:  
+        print(recognition_user,":",recognition_user_ret)
+        return recognition_user, recognition_user_ret
+    else:
+        return -1, 0
 
 if __name__ == "__main__":
     main()
