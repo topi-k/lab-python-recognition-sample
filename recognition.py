@@ -60,7 +60,6 @@ def main():
                 os.path.dirname(__file__)) + '/images/right/'
             right_ear_img = img[ercy-margin:ercy+erch+margin, ercx-margin:ercx+ercw+margin]
             recog_user, distance = recognition(right_ear_img, IMG_DIR)
-            print(recog_user,distance)
             time_end = time.time()
 
         # 左耳の検知処理
@@ -69,12 +68,12 @@ def main():
                 os.path.dirname(__file__)) + '/images/left/'
             left_ear_img = img[elcy-margin:elcy+elch+margin, elcx-margin:elcx+elcw+margin]
             recog_user, distance = recognition(left_ear_img, IMG_DIR)
-            print(recog_user,distance)
             time_end = time.time()
         
         if recog_user != -1:
-            print ("{0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
-            print ("Recognition User:",recog_user," Ret",distance)
+            print ("TIME: {0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
+            print ("Recognition >> User:",recog_user," Ret",distance)
+            break
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -87,7 +86,7 @@ def main():
 def recognition(img, IMG_DIR):
     file_dir = ""
     users_dir = os.listdir(IMG_DIR)
-    recognition_user_ret = 0
+    users_cnt = len(users_dir)
 
     # AKAZE検出器の生成
     akaze = cv2.AKAZE_create()
@@ -108,9 +107,17 @@ def recognition(img, IMG_DIR):
 
     (target_kp, target_des) = akaze.detectAndCompute(camera_img, None)
 
+    user_lst_ret = list(range(users_cnt))
+    user_lst_id = list(range(users_cnt))
+
+    index = 0
+
     for user_dir in users_dir:
-        max_ret_user = 0
+        
+        temp = 0
+
         user_id = int(user_dir)
+        user_lst_id[index] = user_id
 
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
 
@@ -133,22 +140,28 @@ def recognition(img, IMG_DIR):
             matches = bf.match(target_des, comparing_des)
             if len(matches) == 0:
                 break
+            
             dist = [m.distance for m in matches]
             ret = sum(dist) / len(dist)
+            temp = ret + temp
+        
+        user_lst_ret[index] = temp / len(files_dir)
+        user_lst_ret[index] = np.percentile(user_lst_ret[index],50)
 
-            if max_ret_user < ret:
-                max_ret_user = ret
+        index = index + 1
+
+    recognition_user = -1
+    recognition_ret = 0
+
+    for i in range(index):
+        if recognition_ret < user_lst_ret[i]:
+            recognition_ret = user_lst_ret[i]
+            recognition_user = user_lst_id[i]
+        print("User:", user_lst_id[i] ," Ret:", user_lst_ret[i])
+    
+    return recognition_user,recognition_ret
 
 
-            if max_ret_user > recognition_user_ret:
-                recognition_user_ret = max_ret_user
-                recognition_user = user_id
-                
-    if threshold < max_ret_user:  
-        print(recognition_user,":",recognition_user_ret)
-        return recognition_user, recognition_user_ret
-    else:
-        return -1, 0
 
 if __name__ == "__main__":
     main()
