@@ -146,7 +146,7 @@ def recognition(img, IMG_DIR):
             temp = ret + temp
         
         user_lst_ret[index] = temp / len(files_dir)
-        user_lst_ret[index] = np.percentile(user_lst_ret[index],50)
+        user_lst_ret[index] = np.amax(user_lst_ret[index])
 
         index = index + 1
 
