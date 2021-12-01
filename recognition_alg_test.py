@@ -28,10 +28,10 @@ def main():
 
     time_start = time.time()
     img = cv2.imread(sys.argv[1]) 
-    print(img.type)
-
     # グレースケール変換
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+
 
     if sys.argv[2] == "right":
         IMG_DIR = os.path.abspath(
@@ -53,6 +53,7 @@ def main():
 
 
 def recognition(img, IMG_DIR):
+    print("Recognition processing... :",IMG_DIR)
     file_dir = ""
     users_dir = os.listdir(IMG_DIR)
     users_cnt = len(users_dir)
@@ -75,9 +76,6 @@ def recognition(img, IMG_DIR):
     camera_img = clahe.apply(camera_img)
 
     (target_kp, target_des) = akaze.detectAndCompute(camera_img, None)
-    
-    cv2.imshow('camera_img', camera_img)
-    cv2.waitKey(0)
 
     user_lst_ret = list(range(users_cnt))
     user_lst_id = list(range(users_cnt))
@@ -114,31 +112,21 @@ def recognition(img, IMG_DIR):
             matches = bf.match(target_des, comparing_des)
             if len(matches) == 0:
                 break
-            
-            # matchesをdescriptorsの似ている順にソートする 
-            matches = sorted(matches, key = lambda x:x.distance)
-
-            # 検出結果を描画する
-            img3 = cv2.drawMatches(camera_img, comparing_kp, lib_img, comparing_kp, matches[:1], None, flags = cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-
-            #検出結果を描画した画像を出力する
-            cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
-            cv2.imshow('Result', img3)
 
             dist = [m.distance for m in matches]
             ret = sum(dist) / len(dist)
             temp = ret + temp
         
         user_lst_ret[index] = temp / len(files_dir)
-        user_lst_ret[index] = np.amax(user_lst_ret[index])
+        user_lst_ret[index] = np.amin(user_lst_ret[index])
 
         index = index + 1
 
     recognition_user = -1
-    recognition_ret = 0
+    recognition_ret = 300
 
     for i in range(index):
-        if recognition_ret < user_lst_ret[i]:
+        if user_lst_ret[i] < recognition_ret:
             recognition_ret = user_lst_ret[i]
             recognition_user = user_lst_id[i]
         print("User:", user_lst_id[i] ," Ret:", user_lst_ret[i])
