@@ -1,2 +1,5 @@
 
+images/*
+tests/ami_ear_dataset/*
 *.jpg
+*.png

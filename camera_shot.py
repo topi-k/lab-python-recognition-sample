@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Wiki https://en.wikipedia.org/wiki/Haar-like_feature
-# OpenCV-Python　https://docs.opencv.org/3.4.1/d7/d8b/tutorial_py_face_detection.html　
+# データセット用写真撮影
+# 2021/11/03
 
 import cv2
 import sys
@@ -15,7 +15,7 @@ ear_right_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_rightear.xml')
 ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
-margin = 10
+margin = 0
 
 right_ear_img_cnt = 0
 left_ear_img_cnt = 0

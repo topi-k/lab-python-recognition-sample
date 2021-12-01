@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# CUDA機能テスト
+# 2021/11/3
+
 import sys
 import time
 import cv2

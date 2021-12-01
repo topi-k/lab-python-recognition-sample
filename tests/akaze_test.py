@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# AKAZE(OpenCV) 動作検証用コード
+# 2021/10/23
+
 #OpenCVをインポート
 import cv2  
 

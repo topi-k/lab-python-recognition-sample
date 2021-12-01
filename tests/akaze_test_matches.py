@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# AKAZE(OpenCV) 動作検証用コード
+# 2021/10/23
+
 #OpenCVをインポート
 import cv2
 
@@ -13,7 +17,7 @@ print("size:",img1.shape,img2.shape)
 
 # １枚目の画像をグレースケールで読み出し
 gray1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY) 
-# ２枚目の画像をグレースケールで読み出し
+# ２枚目の画像をグレースケールcd で読み出し
 gray2 = cv2.cvtColor(img2,cv2.COLOR_BGR2GRAY) 
 
 # コントラスト均等化
