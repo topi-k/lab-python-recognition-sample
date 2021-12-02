@@ -18,7 +18,7 @@ ear_right_cascade = cv2.CascadeClassifier(
 ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
 # Settings
-ami_database_dir = os.path.abspath(os.path.dirname(__file__)) + '/tests/ami_ear_database/subset-1/'""
+ami_database_dir = os.path.abspath(os.path.dirname(__file__)) + '/tests/ami_ear_database/subset-4/'""
 ami_database_dir_list = os.listdir(ami_database_dir)
 pattern = "([0-9]+)_(.*)_ear.jpg"
 margin = 10
@@ -31,8 +31,8 @@ for dir in ami_database_dir_list:
     if result:
         img = cv2.imread(ami_database_dir + dir)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
-        ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
+        ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(150,150))
+        ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(150,150))
         if len(ear_right) != 0:
             if os.path.exists("./images/right/" + str(user_id)) == False:
                 os.mkdir("./images/right/" + str(user_id))

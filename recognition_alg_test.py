@@ -28,22 +28,26 @@ def main():
 
     time_start = time.time()
     img = cv2.imread(sys.argv[1]) 
+
     # グレースケール変換
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
+    ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
 
+    if len(ear_right) != 0:
+        for (ercx, ercy, ercw, erch) in ear_right:
+            img = img[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
+            IMG_DIR = os.path.abspath( os.path.dirname(__file__)) + '/images/right/'
+            recog_user, distance = recognition(img, IMG_DIR)
+            time_end = time.time()
 
-    if sys.argv[2] == "right":
-        IMG_DIR = os.path.abspath(
-            os.path.dirname(__file__)) + '/images/right/'
-        recog_user, distance = recognition(img, IMG_DIR)
-        time_end = time.time()
-
-    if sys.argv[2] == "left":
-        IMG_DIR = os.path.abspath(
-            os.path.dirname(__file__)) + '/images/left/'
-        recog_user, distance = recognition(img, IMG_DIR)
-        time_end = time.time()
+    if len(ear_left) != 0:
+        for (ercx, ercy, ercw, erch) in ear_left:
+            img = img[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
+            IMG_DIR = os.path.abspath(os.path.dirname(__file__)) + '/images/left/'
+            recog_user, distance = recognition(img, IMG_DIR)
+            time_end = time.time()
         
     if recog_user != -1:
         print ("TIME: {0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
@@ -83,12 +87,13 @@ def recognition(img, IMG_DIR):
     index = 0
 
     for user_dir in users_dir:
-        temp = 0
+        temp = 300
 
         user_id = int(user_dir)
         user_lst_id[index] = user_id
 
         files_dir = os.listdir(IMG_DIR+"/" + user_dir + "/")
+        print("Processing ",user_dir)
 
         for file_dir in files_dir:
             lib_img_path = IMG_DIR + "/" + user_dir + "/" + file_dir # ライブラリの検出対象画像へのパス
@@ -115,10 +120,11 @@ def recognition(img, IMG_DIR):
 
             dist = [m.distance for m in matches]
             ret = sum(dist) / len(dist)
-            temp = ret + temp
-        
-        user_lst_ret[index] = temp / len(files_dir)
-        user_lst_ret[index] = np.amin(user_lst_ret[index])
+            if temp > ret:
+                temp = ret
+            print("{0} > {1}".format(file_dir,ret))
+
+        user_lst_ret[index] = temp
 
         index = index + 1
 

@@ -28,13 +28,13 @@ save_img_cnt = 0
 for dir in ami_database_dir_list:
     result = re.match(pattern, dir)
     if result:
-        if result.group(2) == "right":
+        if result.group(2) == "back":
             user_id = str(int(result.group(1)))
             if os.path.exists("./images/right/" + user_id) == False:
                 os.mkdir("./images/right/" + user_id)
             shutil.copy(ami_database_dir + dir , "./images/right/" + user_id + "/" + dir)
             print ("Copy "+ ami_database_dir + "/" + dir + " to " "./images/right/" + user_id + "/" + dir)
-        elif result.group(2) == "left":
+        elif result.group(2) == "front":
             user_id = str(int(result.group(1)))
             if os.path.exists("./images/left/" + user_id) == False:
                 os.mkdir("./images/left/" + user_id)
