@@ -44,8 +44,8 @@ while(True):
 # グレースケール変換
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    ear_right = ear_right_cascade.detectMultiScale(gray)
-    ear_left = ear_left_cascade.detectMultiScale(gray)
+    ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+    ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
 
     time_unique = int(time.time())
 
@@ -54,10 +54,16 @@ while(True):
 
         save_img_1 = img[ercy-margin:ercy+erch +
                          margin, ercx-margin:ercx+ercw+margin]
-        cv2.imwrite(
-            "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique), save_img_1)
-        print(
-            "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique))
+        if sys.argv[1] == "raw":
+            cv2.imwrite(
+                "./tests/images/raw/save_img_right_{1}_{0}.jpg".format(user_id, time_unique), img)
+            print(
+                "./tests/images/raw/save_img_right_{1}_{0}.jpg".format(user_id, time_unique))
+        else:
+            cv2.imwrite(
+                "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique), save_img_1)
+            print(
+                "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique))
 
         right_ear_img_cnt = right_ear_img_cnt + 1
 
@@ -68,10 +74,16 @@ while(True):
         #cv2.rectangle(img, (elcx, elcy),(elcx+elcw, elcy+elch), (0, 0, 255), 2)
         save_img_2 = img[elcy-margin:elcy+elch +
                          margin, elcx-margin:elcx+elcw+margin]
-        cv2.imwrite(
-            "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique), save_img_2)
-        print(
-            "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique))
+        if sys.argv[1] == "raw":
+            cv2.imwrite(
+                "./tests/images/raw/save_img_left_{1}_{0}.jpg".format(user_id, time_unique), img)
+            print(
+                "./tests/images/raw/save_img_left_{1}_{0}.jpg".format(user_id, time_unique))
+        else:
+            cv2.imwrite(
+                "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique), save_img_2)
+            print(
+                "./images/left/{0}/save_img_left_{1}.jpg".format(user_id, time_unique))           
 
         left_ear_img_cnt = left_ear_img_cnt + 1
         

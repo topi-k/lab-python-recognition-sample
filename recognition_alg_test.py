@@ -19,7 +19,7 @@ face_cascade = cv2.CascadeClassifier(
 
 # A-KAZE/KNN Setting
 margin = 10 # 画像の周辺空間
-zoom_diam = 3 # （特徴量検出用の拡大倍率）
+zoom_diam = 2 # （特徴量検出用の拡大倍率）
 threshold = 200 # 閾値
 
 def main():
@@ -29,12 +29,15 @@ def main():
     time_start = time.time()
     img = cv2.imread(sys.argv[1]) 
 
+    print(type(img))
+
     # グレースケール変換
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
-    ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(100,100))
+    ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+    ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
 
+    print("Detected R:",len(ear_right)," L:",len(ear_left))
     if len(ear_right) != 0:
         for (ercx, ercy, ercw, erch) in ear_right:
             img = img[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
@@ -64,7 +67,7 @@ def recognition(img, IMG_DIR):
 
     # AKAZE検出器の生成
     akaze = cv2.AKAZE_create()
-    # BFMatcherオブジェクトの生成
+    # BFMatcherオブジェクトの生成q
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     # CLAHEオブジェクトの生成
     clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(4,4))
