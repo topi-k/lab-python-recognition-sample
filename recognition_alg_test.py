@@ -17,6 +17,14 @@ ear_left_cascade = cv2.CascadeClassifier(
 face_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_frontalface_default.xml') 
 
+# CLAHEオブジェクトの生成
+clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(4,4))
+
+# AKAZE検出器の生成
+akaze = cv2.AKAZE_create()
+# BFMatcherオブジェクトの生成q
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
 # A-KAZE/KNN Setting
 margin = 10 # 画像の周辺空間
 zoom_diam = 2 # （特徴量検出用の拡大倍率）
@@ -31,8 +39,9 @@ def main():
 
     print(type(img))
 
-    # グレースケール変換
+    # グレースケール変換 & コントラスト均等化
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = clahe.apply(gray)
 
     ear_right = ear_right_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
     ear_left = ear_left_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
@@ -64,13 +73,6 @@ def recognition(img, IMG_DIR):
     file_dir = ""
     users_dir = os.listdir(IMG_DIR)
     users_cnt = len(users_dir)
-
-    # AKAZE検出器の生成
-    akaze = cv2.AKAZE_create()
-    # BFMatcherオブジェクトの生成q
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    # CLAHEオブジェクトの生成
-    clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(4,4))
 
     # カメラの画像を処理する
     camera_img = img
