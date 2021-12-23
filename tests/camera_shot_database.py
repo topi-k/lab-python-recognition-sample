@@ -11,11 +11,14 @@ import os
 import time
 
 # 顔検出用カメラ
-DEVICE_ID = 0
+DEVICE_ID = 1
 capture_face = cv2.VideoCapture(DEVICE_ID)
 # 耳検出用カメラ
-DEVICE_ID = 1
-capture_ear = cv2.VideoCapture(DEVICE_ID)
+DEVICE_ID = 0
+capture_ear_1 = cv2.VideoCapture(DEVICE_ID)
+
+DEVICE_ID = 2
+capture_ear_2 = cv2.VideoCapture(DEVICE_ID)
 
 predictor_path = "./tests/shape_predictor_68_face_landmarks.dat"
 
@@ -120,35 +123,56 @@ while(True):
         cv2.putText(frame_face, 'roll : ' + str(int(roll)), (20, 40), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 2)
 
         if (int(abs(yaw)) % rate == 0):
-            if (int(abs(pitch)) > 5 or int(abs(pitch)) < -5):
-                continue
-            if (int(abs(roll)) < -5 or int(abs(roll)) > 5):
-                continue
 
-            ret_ear, frame_ear = capture_ear.read()
+            ret_ear, frame_ear_1 = capture_ear_1.read()
             # グレースケール変換 & コントラスト均等化
-            frame_ear = cv2.cvtColor(frame_ear, cv2.COLOR_BGR2GRAY)
-            frame_ear = clahe.apply(frame_ear)
+            frame_ear_1 = cv2.cvtColor(frame_ear_1, cv2.COLOR_BGR2GRAY)
+            frame_ear_1 = clahe.apply(frame_ear_1)
             # 耳の検出
-            ear_right = ear_right_cascade.detectMultiScale(frame_ear, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
-            ear_left = ear_left_cascade.detectMultiScale(frame_ear, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+            ear_right = ear_right_cascade.detectMultiScale(frame_ear_1, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+            ear_left = ear_left_cascade.detectMultiScale(frame_ear_1, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
             
             if len(ear_right) != 0:
                 for (ercx, ercy, ercw, erch) in ear_right:
-                    save_img = frame_ear[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
-                    print("saved ./tests/dataset/{0}/save_img_right_{1}_{0}_{2}.jpg".format(user_id, int(time.time()), int(yaw)))
-                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}.jpg".format(user_id, int(time.time()), int(yaw)), save_img) # 耳の画像を保存しておく
-                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw)), frame_ear) # 切り取られる以前の画像
-                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_raw_face.jpg".format(user_id, int(time.time()), int(yaw)), frame_face) # 切り取られる以前の画像
+                    save_img = frame_ear_1[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
+                    print("saved ./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)))
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)),save_img) # 耳の画像を保存しておく
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_ear_1) # 切り取られる以前の画像
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}_raw_face.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_face) # 切り取られる以前の画像
             if len(ear_left) != 0:
                 for (elcx, elcy, elcw, elch) in ear_left:
-                    save_img = frame_ear[elcy-margin:elcy+elch + margin, elcx-margin:elcx+elcw+margin]
-                    print("saved ./tests/dataset/{0}/save_img_left_{1}_{0}_{2}.jpg".format(user_id, int(time.time()), int(yaw)))
-                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}.jpg".format(user_id, int(time.time()), int(yaw)), save_img) # 耳の画像を保存しておく
-                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw)), frame_ear) # 切り取られる以前の画像
-                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_raw_face.jpg".format(user_id, int(time.time()), int(yaw)), frame_face) # 切り取られる以前の画像
+                    save_img = frame_ear_1[elcy-margin:elcy+elch + margin, elcx-margin:elcx+elcw+margin]
+                    print("saved ./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)))
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), save_img) # 耳の画像を保存しておく
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_ear_1) # 切り取られる以前の画像
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}_raw_face.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_face) # 切り取られる以前の画像
 
-            cv2.imshow('frame_ear',frame_ear)
+            cv2.imshow('frame_ear_1',frame_ear_1)
+
+            ret_ear, frame_ear_2 = capture_ear_2.read()
+            # グレースケール変換 & コントラスト均等化
+            frame_ear_2 = cv2.cvtColor(frame_ear_2, cv2.COLOR_BGR2GRAY)
+            frame_ear_2 = clahe.apply(frame_ear_2)
+            # 耳の検出
+            ear_right = ear_right_cascade.detectMultiScale(frame_ear_2, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+            ear_left = ear_left_cascade.detectMultiScale(frame_ear_2, scaleFactor=1.1, minNeighbors=1, minSize=(50,50))
+            
+            if len(ear_right) != 0:
+                for (ercx, ercy, ercw, erch) in ear_right:
+                    save_img = frame_ear_2[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
+                    print("saved ./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)))
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)),save_img) # 耳の画像を保存しておく
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_ear_2) # 切り取られる以前の画像
+                    cv2.imwrite("./tests/dataset/{0}/save_img_right_{1}_{0}_{2}_{3}_{4}_raw_face.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_face) # 切り取られる以前の画像
+            if len(ear_left) != 0:
+                for (elcx, elcy, elcw, elch) in ear_left:
+                    save_img = frame_ear_2[elcy-margin:elcy+elch + margin, elcx-margin:elcx+elcw+margin]
+                    print("saved ./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)))
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), save_img) # 耳の画像を保存しておく
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}_raw_ear.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_ear_2) # 切り取られる以前の画像
+                    cv2.imwrite("./tests/dataset/{0}/save_img_left_{1}_{0}_{2}_{3}_{4}_raw_face.jpg".format(user_id, int(time.time()), int(yaw),int(pitch),int(roll)), frame_face) # 切り取られる以前の画像
+
+            cv2.imshow('frame_ear_2',frame_ear_2)
 
         (nose_end_point2D, _) = cv2.projectPoints(np.array([(0.0, 0.0, 500.0)]), rotation_vector,
                                                          translation_vector, camera_matrix, dist_coeffs)
@@ -167,6 +191,6 @@ while(True):
 
 
 capture_face.release()
-capture_ear.release()
+capture_ear_1.release()
 
 cv2.destroyAllWindows()

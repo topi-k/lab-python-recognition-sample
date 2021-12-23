@@ -134,12 +134,16 @@ def recognition(img, IMG_DIR):
         index = index + 1
 
     recognition_user = -1
-    recognition_ret = 300
+    recognition_ret = None
 
     for i in range(index):
+        if (recognition_ret is None):
+            recognition_ret = user_lst_ret[i]
+            recognition_user = user_lst_id[i]
         if user_lst_ret[i] < recognition_ret:
             recognition_ret = user_lst_ret[i]
             recognition_user = user_lst_id[i]
+
         print("User:", user_lst_id[i] ," Ret:", user_lst_ret[i])
     
     return recognition_user,recognition_ret
