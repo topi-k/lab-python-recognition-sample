@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# AMI Ear Database をデータセットとして登録するプログラム
+# AMI Ear Database の耳介を登録画像として登録するプログラム
+# 登録時にカスケード分類器で耳介の有無を確認して登録する
 # 2021/12/01
 
 import cv2
@@ -18,7 +19,7 @@ ear_right_cascade = cv2.CascadeClassifier(
 ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
 # Settings
-ami_database_dir = os.path.abspath(os.path.dirname(__file__)) + '/tests/ami_ear_database/subset-4/'""
+ami_database_dir = os.path.abspath(os.path.dirname(__file__)) + '/tests/ami_ear_database/subset-1/'""
 ami_database_dir_list = os.listdir(ami_database_dir)
 pattern = "([0-9]+)_(.*)_ear.jpg"
 margin = 10
@@ -28,6 +29,10 @@ save_img_cnt = 0
 for dir in ami_database_dir_list:
     result = re.match(pattern, dir)
     user_id = int(result.group(1))
+
+    if (result.group(2) == "zoom"):
+        continue
+
     if result:
         img = cv2.imread(ami_database_dir + dir)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

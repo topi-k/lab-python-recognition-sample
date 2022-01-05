@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-# AMI Ear Database をデータセットとして登録するプログラム
+# AMI Ear Databaseの耳介を登録画像として登録するプログラム
 # 2021/12/01
 
 import cv2
-import sys
-import time
 import os
 import re
 import shutil
@@ -30,14 +28,13 @@ for dir in ami_database_dir_list:
     if result:
         if result.group(2) == "back":
             user_id = str(int(result.group(1)))
-            if os.path.exists("./images/right/" + user_id) == False:
-                os.mkdir("./images/right/" + user_id)
-            shutil.copy(ami_database_dir + dir , "./images/right/" + user_id + "/" + dir)
-            print ("Copy "+ ami_database_dir + "/" + dir + " to " "./images/right/" + user_id + "/" + dir)
+            if os.path.exists("./ami_images/right/" + user_id) == False:
+                os.mkdir("./ami_images/right/" + user_id)
+            shutil.copy(ami_database_dir + dir , "./ami_images/right/" + user_id + "/" + dir)
+            print ("Copy "+ ami_database_dir + "/" + dir + " to " "./ami_images/right/" + user_id + "/" + dir)
         elif result.group(2) == "front":
             user_id = str(int(result.group(1)))
-            if os.path.exists("./images/left/" + user_id) == False:
-                os.mkdir("./images/left/" + user_id)
-            shutil.copy(ami_database_dir + dir , "./images/left/" + user_id + "/" + dir)
-            print ("Copy "+ ami_database_dir + "/" + dir + " to " "./images/left/" + user_id + "/" + dir)          
-
+            if os.path.exists("./ami_images/left/" + user_id) == False:
+                os.mkdir("./ami_images/left/" + user_id)
+            shutil.copy(ami_database_dir + dir , "./ami_images/left/" + user_id + "/" + dir)
+            print ("Copy "+ ami_database_dir + "/" + dir + " to " "./ami_images/left/" + user_id + "/" + dir)          

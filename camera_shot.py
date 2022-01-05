@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# データセット用写真撮影
+#　カメラから入力された画像を登録画像として登録するためのプログラム
 # 2021/11/03
 
 import cv2
@@ -58,7 +58,8 @@ while(True):
             cv2.imwrite(
                 "./tests/images/raw/save_img_right_{1}_{0}.jpg".format(user_id, time_unique), img)
             print(
-                "./tests/images/raw/save_img_right_{1}_{0}.jpg".format(user_id, time_unique))
+             "./tests/images/raw/save_img_right_{1}_{0}.jpg".format(user_id, time_unique))
+             
         else:
             cv2.imwrite(
                 "./images/right/{0}/save_img_right_{1}.jpg".format(user_id, time_unique), save_img_1)

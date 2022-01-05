@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# アルゴリズム検証用プログラム
+# リアルタイム検知プログラムをベースに、入力画像を引数で制御可能にしたもの
+# 引数 1: 入力画像
+# 引数 2: どっちの耳か(left/right)
+
 import cv2
 import sys
 import time
@@ -27,7 +33,7 @@ bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
 # A-KAZE/KNN Setting
 margin = 10 # 画像の周辺空間
-zoom_diam = 2 # （特徴量検出用の拡大倍率）
+zoom_diam = 5 # （特徴量検出用の拡大倍率）
 threshold = 200 # 閾値
 
 def main():
@@ -39,6 +45,7 @@ def main():
 
     print(type(img))
 
+    gray = img
     # グレースケール変換 & コントラスト均等化
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = clahe.apply(gray)
@@ -59,10 +66,10 @@ def main():
             img = img[ercy-margin:ercy+erch + margin, ercx-margin:ercx+ercw+margin]
             IMG_DIR = os.path.abspath(os.path.dirname(__file__)) + '/images/left/'
             recog_user, distance = recognition(img, IMG_DIR)
-            time_end = time.time()
-        
+    
+    time_end = time.time()
     if recog_user != -1:
-        print ("TIME: {0}".format((time_end - time_start) * 1000 / 10000) + "[sec]")
+        print ("TIME: {0}".format((time_end - time_start)) + "[sec]")
         print ("Recognition >> User:",recog_user," Ret",distance)
 
     cv2.destroyAllWindows()

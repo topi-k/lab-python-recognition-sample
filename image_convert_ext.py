@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-# データセット用既存画像変換用プログラム
+# 外部の画像をデータセットとして登録するためのプログラム
+# カスケード分類器で耳介が存在するかを確認し、存在していれば指定されたユーザーとして保存
+# 引数 1: 入力画像
 # 2021/11/24
 
 import cv2
@@ -17,6 +19,7 @@ ear_left_cascade = cv2.CascadeClassifier(
     'data/haarcascades/haarcascade_mcs_leftear.xml')
 # Settings
 margin = 10
+
 save_img_cnt = 0
 
 while(1):
